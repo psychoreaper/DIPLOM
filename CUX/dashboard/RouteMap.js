@@ -12,14 +12,8 @@ Ext.define('CUX.dashboard.RouteMap', {
 
     initComponent: function () {
         this.callParent(arguments);
-        // this.loadStores();
-        // this.setDefaults();
-
-        //this.metaValues = Ext.create('Ext.util.HashMap');
 
         // ТУТ ЗАПРОС К БЭКУ
-
-        //this.loadMetaData('meta/entities?size=5');
         var schoolData = this.loadSchoolData('search?_dc=' + Number(new Date()), {
             "asOf": "2021-04-10T00:00:00.000",
             "count": 30,
@@ -48,21 +42,10 @@ Ext.define('CUX.dashboard.RouteMap', {
         });
 
         this.studentsData.forEach(i => referencePoints.push(i[4].value));
-        // referencePoints.push(this.studentsData.map(x => {
-        //     return x[4].value //не нравится мне это...
-        // }));
-
-        /*var referencePoints = [
-            'Санкт-Петербург, Средний проспект Васильевского острова, 20',
-            'Санкт-Петербург, 7-я линия Васильевского острова, 72',
-            'Санкт-Петербург, 3-я линия Васильевского острова, 46',
-            'Санкт-Петербург, 13-я линия Васильевского острова, 56',
-        ];*/
 
         console.log(referencePoints);
 
         // отрисовываем карту с маршрутом
-        //this.drawMap(referencePoints);
         this.drawMap(this.runTSP(referencePoints));
 
     },
@@ -71,42 +54,10 @@ Ext.define('CUX.dashboard.RouteMap', {
     drawMap: function (points) {
         var me = this,
             n = points.length,
-            //sortedPoints = [],
             sortedPoints = points;
-            routePromises = [];
+
         ymaps.ready(mapInit);
-
         function mapInit() {
-
-            /*// создание матрицы
-            debugger;
-            var matrix = new Array(n).fill(0).map(() => new Array(n).fill(0));
-            for (let i = 0; i < n; i++) {
-                for (let j = 0; j < n; j++) {
-                    if (i === j) matrix[i][j] = Number.POSITIVE_INFINITY
-                    else {
-                        routePromises.push(new ymaps.route([points[i], points[j]], {
-                            multiRoute: false
-                        }).then(function (route) {
-                            console.log(route);
-                            //route.options.set("mapStateAutoApply", true);
-
-                            //console.log(route.getHumanLength(), route.getHumanTime(), route.getJamsTime(), route.getLength(), route.getTime());
-                            //1.7&#160;км 3&#160;мин 502.8161778450012 1663.4763312339783 209.3511523604393
-                        }/!*, function (err) {
-                            throw err;
-                        }, this*!/));
-                    }
-                }
-            }
-            Promise.all(routePromises).then(
-                (x) => console.log(x)
-                //matrix[i][j] = route.getJamsTime() / 60;
-            );
-
-            //debugger;
-            sortedPoints = me.runTSP(matrix, points);*/
-
             var myMap = new ymaps.Map("yandex-map", {
                 center: [59.939095, 30.315868],
                 zoom: 9
@@ -118,13 +69,11 @@ Ext.define('CUX.dashboard.RouteMap', {
                     boundsAutoApply: true
                 });
                 myMap.geoObjects.add(multiRoute);
-
             }
         }
     },
 
     // поиск решения
-    //runTSP: function (matrix, points) {
     runTSP: function (points) {
         var me = this,
             resultPoints = [];
@@ -144,24 +93,18 @@ Ext.define('CUX.dashboard.RouteMap', {
         ];
 
         // TODO: написать получение матрицы
-        // ТУТ ЗАПРОС НА ЯНДЕКСОВОЕ АПИ
-        // var route = ymaps.route([points[0], points[1]]).then(function (route) {
-        //     console.log(route);
-        // });
-        //console.log(route.getHumanLength(), route.getHumanTime(), route.getJamsTime(), route.getLength(), route.getTime());
 
         return matrix;
     },
 
     // решение задачи коммивояжёра
-    //solveTSP: function (matrix, coordPoints) {
     solveTSP: function (coordPoints) {
         var me = this,
             dist = me.getMatrix(coordPoints),
             points = [],
             n = coordPoints.length,
-            d = new Array(1 << n).fill(0).map(() => new Array(n).fill(Number.POSITIVE_INFINITY)),
-            p = new Array(1 << n).fill(0).map(() => new Array(n).fill(Number.POSITIVE_INFINITY));
+            d = new Array(1 << n).fill(0).map(() => new Array(n).fill(Number.POSITIVE_INFINITY)), // расстояние
+            p = new Array(1 << n).fill(0).map(() => new Array(n).fill(Number.POSITIVE_INFINITY)); // маршрут
 
         for (var i = 0; i < n; i++) {
             points.push({id: i, coord: coordPoints[i]});
@@ -208,12 +151,10 @@ Ext.define('CUX.dashboard.RouteMap', {
         }
         res.push(res[0]);
 
-// d - расстояние
-// p - маршрут
         return res;
 
-// bitmask | (1 << next) ставит единичку на nextовый бит
-// то есть допустим bitmask = 00010, next = 2. тогда мы ставим единичку на 2 позицию
+        // bitmask | (1 << next) ставит единичку на nextовый бит
+        // то есть допустим bitmask = 00010, next = 2. тогда мы ставим единичку на 2 позицию
     },
 
     loadMetaData: function (endpoint) {
@@ -265,59 +206,6 @@ Ext.define('CUX.dashboard.RouteMap', {
             }
         });
         return hits;
-    },
-
-    createUrl: function (isExport) {
-        var entities = this.lookupReference('entities');
-        var url;
-
-        if (isExport) {
-            url = Unidata.Config.getMainUrl() + "custom/rest/getPotencialDuplicatesToExcel";
-        } else {
-            url = Unidata.Config.getMainUrl() + "custom/rest/getPotencialDuplicates";
-            if (entities.getValueRecords() && entities.getValueRecords().length > 0) {
-                url += "?";
-                entities.getValueRecords().forEach(element => {
-                    url += "entities=" + element.data.name + "&";
-                });
-                url = url.slice(0, -1);
-            }
-        }
-        return url;
-    },
-
-    sendRequest: function (url, callback) {
-        var me = this;
-        return Ext.Ajax.request({
-            url: url,
-            method: 'GET',
-            scope: this,
-            timeout: 60000,
-            success: function (response) {
-                var result = JSON.parse(response.responseText).content;
-                var resultArray = [];
-
-                result.forEach(element => {
-                    var entity = element.entityName;
-                    Object.keys(element.ruleToCount).forEach(function (key) {
-                        var value = element.ruleToCount[key];
-                        // resultArray.push(Ext.create('CUX.dashboard.potentialduplicates.DuplicateModel', {
-                        //     entityName: me.view.displayValues.map[entity],
-                        //     ruleName: key,
-                        //     count: value
-                        // }))
-                        debugger;
-                    });
-                });
-
-                // var grid = this.lookupReference("customgrid");
-                // grid.getStore().loadData(resultArray);
-                // grid.getView().refresh();
-            },
-            failure: function (response) {
-                alert('Ошибка подключения');
-            }
-        });
     },
 
     // TODO: добавить элементов

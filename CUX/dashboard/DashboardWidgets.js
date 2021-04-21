@@ -9,7 +9,6 @@ Ext.define('CUX.dashboard.DashboardWidgets', {
     override: 'Unidata.uiuserexit.overridable.dashboard.DashboardWidgets',
     requires: [
         'CUX.dashboard.RouteMap',
-        'CUX.dashboard.Game2048',
     ],
 
     /**
@@ -30,12 +29,6 @@ Ext.define('CUX.dashboard.DashboardWidgets', {
                 text: 'Карта',
                 widget: {
                     xtype: 'routemap'
-                }
-            },
-            {
-                text: '2048',
-                widget: {
-                    xtype: 'game2048'
                 }
             },
         );
