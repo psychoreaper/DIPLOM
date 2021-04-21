@@ -1,0 +1,182 @@
+<!DOCTYPE HTML>
+<html manifest="">
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+    <title></title>
+
+    <style type="text/css">
+        /**
+        Здесь задаются стили только для экрана логина
+         */
+        body:after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            margin-left: -50px;
+            margin-top: -50px;
+            width: 100px;
+            height: 100px;
+            background-image: url("resources/loading.gif");
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        body.x-body:after, body.un-login-body:after {
+            background-image: none;
+            display: none;
+        }
+    </style>
+
+    <!--blank favicon-->
+    <link href="data:image/x-icon;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQEAYAAABPYyMiAAAABmJLR0T///////8JWPfcAAAACXBIWXMAAABIAAAASABGyWs+AAAAF0lEQVRIx2NgGAWjYBSMglEwCkbBSAcACBAAAeaR9cIAAAAASUVORK5CYII=" rel="icon" type="image/x-icon" />
+
+    <link rel="stylesheet" href="resources/animate.css">
+    <link rel="stylesheet" href="resources/font-awesome-4.5.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="resources/linearicons/style.css">
+
+    <link rel="stylesheet" href="unidatabootstrap.css">
+
+    <script type="text/javascript" src="vendors/jquery-2.1.3.min.js"></script>
+    <script type="text/javascript" src="vendors/d3.v5.min.js"></script>
+</head>
+<body>
+<template id="logintpl" style="display: none;">
+    <div class="un-logincont">
+        <div class="un-logincont-inner">
+            <div class="panel">
+                <div class="panel-heading">
+
+                    <div class="un-local-switch">
+                        <div class="un-menu-dot">
+                            <label class="un-menu-toggle-text"></label>
+                        </div>
+
+                        <div class="menu" style="display: none;">
+                            <div class="arrow"></div>
+                            <div class="arrow-down"></div>
+                            <div class="menu-wrap">
+                                <a href="#" locale="ru">Русский<span class="icon icon-selected"></span><span class="icon icon-flag-ru"></span></a>
+                                <a href="#" locale="en">English<span class="icon icon-selected"></span><span class="icon icon-flag-en"></span></a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="logo-container"></div>
+                </div>
+                <div class="panel-body">
+
+                    <!--вкладка с формой логина-->
+                    <div class="un-login-tab">
+                        <p role="wrong-authorization-text"></p>
+
+                        <div class="form-group">
+                            <div class="input-group">
+                                    <span class="input-group-addon">
+                                       <i class="un-input-icon un-icon-user"></i>
+                                    </span>
+                                <input class="form-control" placeholder="" type="text" autofocus>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="input-group">
+                                    <span class="input-group-addon">
+                                       <i class="un-input-icon un-icon-password"></i>
+                                    </span>
+                                <input class="form-control" placeholder="" type="password">
+                            </div>
+                        </div>
+
+                        <button class="btn btn-block btn-login"></button>
+
+                        <p class='additional-action'>
+                            <a href="#" role="forgot-password"></a>
+                        </p>
+                    </div>
+
+                    <!--вкладка с информацией по истекшей лицензии-->
+                    <div class="un-warning-tab">
+                        <div role="warning-wrap">
+                            <p role="warning-title"></p>
+                            <p role="warning-text"></p>
+                        </div>
+
+                        <button class="btn btn-block" role="warningtab-back-btn"></button>
+                    </div>
+
+                    <!--вкладка с формой восстановления пароля -->
+                    <div class="un-restore-tab">
+                        <p role="restore-password-title"></p>
+                        <p role="restore-password-description"></p>
+                        <div class="form-group">
+                            <div class="input-group">
+                                <input class="form-control" placeholder="" type="text" autofocus>
+                            </div>
+                        </div>
+                        <p role="or"></p>
+                        <div class="form-group">
+                            <div class="input-group">
+                                <input class="form-control" placeholder="" type="text" autofocus>
+                            </div>
+                        </div>
+                        <p role="wrong-restore-text"></p>
+
+                        <button class="btn btn-block"></button>
+
+                        <p role="password-was-sent"></p>
+
+                        <p class='additional-action'>
+                            <a href="#" role="go-back"></a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</template>
+
+<script type="text/javascript">
+    var unidataVersion = 'r5.2.5.f76c04f',
+        unidataBuildDate = '2020-11-06 18:02:03',
+        customerConfig = {},
+        customerUrl = '';
+</script>
+
+<script type="text/javascript">
+    var script = document.createElement('script'),
+        element = document.querySelectorAll('head')[0];
+
+    script.type = 'text/javascript';
+    script.src = 'customerbootstrap.js?_dc=' + Number(new Date());
+    script.async = false;
+
+    // is IE?
+    if (element.appendChild) {
+        element.appendChild(script, element.lastChild);
+    } else {
+        element.append(script);
+    }
+</script>
+
+<!--<script id="microloader" type="text/javascript" src="bootstrap.js"></script>-->
+<script type="text/javascript">
+    var script = document.createElement('script'),
+        element = document.querySelectorAll('body')[0];
+
+    script.type = 'text/javascript';
+    script.src = 'unidatabootstrap.js?_dc=' + Number(new Date());
+    script.async = false;
+
+    // is IE?
+    if (element.appendChild) {
+        element.appendChild(script);
+    } else {
+        element.append(script);
+    }
+</script>
+</body>
+</html>
