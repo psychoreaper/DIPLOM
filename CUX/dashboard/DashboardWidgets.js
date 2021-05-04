@@ -10,14 +10,7 @@ Ext.define('CUX.dashboard.DashboardWidgets', {
     requires: [
         'CUX.dashboard.RouteMap',
     ],
-
     /**
-     * @typedef {Object} WidgetItem
-     * @property {string} text - Название виджета, отображается в меню выбора
-     * @property {Object} widget - Конфигурационный объект виджета
-     */
-    /**
-
      * Список доступных виджетов
      * @see Unidata.uiuserexit.overridable.dashboard.DashboardWidgets.editWidgetsList
      *
