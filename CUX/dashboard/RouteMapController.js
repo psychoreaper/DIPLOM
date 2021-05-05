@@ -4,51 +4,29 @@ Ext.define('CUX.dashboard.RouteMapController', {
 
     init: function () {
         this.callParent(arguments);
-        var referencePoints = [],
-            schoolData,
-            studentsData;
 
-        schoolData = this.loadSchoolData('search?_dc=' + Number(new Date()), {
-            "asOf": "2021-04-29T00:00:00.000",
-            "count": 30,
-            "countOnly": false,
-            "entity": "School",
-            "fetchAll": true,
-            "page": 1,
-            "start": 0,
-            "searchFields": ["Name"],
-            "returnFields": ["Name", "Address_Text", "Address_Coord", "$from", "$to"],
-        });
-        referencePoints.push(schoolData[0][1].value);
+        this.loadSchoolsStore();
+        this.loadClassesStore();
+    },
 
-        studentsData = this.loadStudentsData('search?_dc=' + Number(new Date()), {
-            "asOf": "2021-04-29T00:00:00.000",
-            "count": 30,
-            "countOnly": false,
-            "entity": "Student",
-            "fetchAll": true,
-            "page": 1,
-            "start": 0,
-            "searchFields": ["Last_Name", "First_Name", "School", "Class", "Address_Text", "Address_Coord"],
-            "returnFields": ["Last_Name", "First_Name", "School", "Class", "Address_Text", "Address_Coord"],
-        });
+    getDefaultDateStr: function () {
+        var date = new Date();
+        return this.getDateStr(date) + "T00:00:00.000";
+    },
 
-        studentsData.forEach(i => referencePoints.push(i[4].value));
-
-        //TODO: разобраться с этим говном
-        // var storeSchoolItems = this.getViewModel()/*.getStore('schoolsStore')*/;
-        // console.log(storeSchoolItems);
-        this.referencePoints = referencePoints;
+    getDateStr: function (date) {
+        let day = date.getDate();
+        let year = date.getFullYear();
+        let month = date.getMonth() + 1;
+        day = day < 10 ? "0" + day : day;
+        month = month < 10 ? "0" + month : month;
+        return year + '-' + month + '-' + day;
     },
 
     onBuildButtonClick: function () {
         // отрисовываем карту с маршрутом
         //this.drawMap(this.runTSP(this.referencePoints));
-        debugger;
-        this.getYandexMatrix();
-    },
-
-    onMatrixButtonClick: function () {
+        this.loadData();
         this.getYandexMatrix();
     },
 
@@ -67,9 +45,12 @@ Ext.define('CUX.dashboard.RouteMapController', {
 
         Promise.all(route).then(function (geoCodeValues) {
             me.drawMap(me.runTSP(me.referencePoints, me.parseMatrix(geoCodeValues)));
+            var res = '';
+            Ext.each(me.sortedPoints, function (i) {
+                res += '&#8227; ' + i + '<br>';
+            })
+            Ext.ComponentQuery.query('[itemId=routeText]')[0].getEl().setHtml(res);
         });
-
-        //debugger;
     },
 
     parseMatrix: function (geoCodeValues) {
@@ -101,6 +82,8 @@ Ext.define('CUX.dashboard.RouteMapController', {
             n = points.length,
             sortedPoints = points;
 
+        this.sortedPoints = points;
+
         ymaps.ready(mapInit);
 
         function mapInit() {
@@ -119,7 +102,7 @@ Ext.define('CUX.dashboard.RouteMapController', {
         }
     },
 
-    // поиск решения
+    // решение задачи коммивояжёра
     runTSP: function (points, matrix) {
         var resultPoints = [];
 
@@ -127,21 +110,7 @@ Ext.define('CUX.dashboard.RouteMapController', {
         return resultPoints;
     },
 
-    // получение матрицы критериев для задачи коммивояжёра. пока что используем расстояние между пунктами
-    /*getMatrix: function (points) {
-        var matrix = [
-            [Number.POSITIVE_INFINITY, 0.78, 0.99, 1.1],
-            [0.78, Number.POSITIVE_INFINITY, 1.1, 0.7],
-            [0.99, 1.1, Number.POSITIVE_INFINITY, 1.4],
-            [1.1, 0.7, 1.4, Number.POSITIVE_INFINITY]
-        ];
-
-        // TODO: написать получение матрицы
-
-        return matrix;
-    },*/
-
-    // решение задачи коммивояжёра
+    // поиск решения
     solveTSP: function (coordPoints, matrix) {
         var me = this,
             //dist = me.getMatrix(coordPoints),
@@ -151,7 +120,6 @@ Ext.define('CUX.dashboard.RouteMapController', {
             d = new Array(1 << n).fill(0).map(() => new Array(n).fill(Number.POSITIVE_INFINITY)), // расстояние
             p = new Array(1 << n).fill(0).map(() => new Array(n).fill(Number.POSITIVE_INFINITY)); // маршрут
 
-        debugger;
         for (var i = 0; i < n; i++) {
             points.push({id: i, coord: coordPoints[i]});
         }
@@ -189,8 +157,6 @@ Ext.define('CUX.dashboard.RouteMapController', {
             bitmask ^= (1 << tmp) // удаляем вершину из маски
         }
 
-        //debugger;
-        console.log(path);
         var res = [];
         for (let i = 0; i < n; i++) {
             res.push(coordPoints[path[i]]);
@@ -203,26 +169,89 @@ Ext.define('CUX.dashboard.RouteMapController', {
         // то есть допустим bitmask = 00010, next = 2. тогда мы ставим единичку на 2 позицию
     },
 
-    loadMetaData: function (endpoint) {
-        var me = this;
-        Ext.Ajax.request({
-            url: Unidata.Config.getMainUrl() + 'internal/' + endpoint,
-            async: false,
-            method: 'GET',
-            scope: 'this',
-            success: function (response) {
-                var hits = JSON.parse(response.responseText).content;
-                hits.forEach(hit => {
-                    me.metaValues.add(hit.name, hit.displayName);
-                });
-                console.log(me.metaValues);
-            }
-        });
+
+    loadSchoolsStore: function () {
+        var schools = this.getViewModel().getStore('schoolsStore');
+        schools.load();
     },
 
-    loadStudentsData: function (endpoint, config) {
+    loadClassesStore: function () {
+        var classes = this.getViewModel().getStore('classesStore');
+        classes.load();
+    },
+
+    loadData: function () {
+        var school = this.lookupReference('schools').getValue();
+        var className = this.lookupReference('classes').getValue();
+        if (school === null || className === null) {
+            alert('Выберите школу и/или класс')
+        } else {
+            var referencePoints = [],
+                schoolData,
+                studentsData,
+                formFields = [];
+
+            formFields.push({
+                inverted: false,
+                name: "School",
+                searchType: "EXACT",
+                type: "String",
+                value: school
+            })
+
+            schoolData = this.loadSchoolData('search?_dc=' + Number(new Date()), {
+                "asOf": "2021-04-29T00:00:00.000",
+                "count": 30,
+                "countOnly": false,
+                "entity": "School",
+                "fetchAll": true,
+                "page": 1,
+                "start": 0,
+                "searchFields": ["Name"],
+                "returnFields": ["Name", "Address_Text", "Address_Coord", "$from", "$to"],
+                "formFields": formFields,
+            }, school);
+
+            referencePoints.push(schoolData[0].filter(item => {
+                return item.field === 'Address_Text'
+            })[0].value);
+
+            var formFields = [{
+                name: 'School',
+                type: 'String',
+                searchType: 'EXACT',
+                inverted: false,
+                value: 'Гимназия № 24 имени И.А. Крылова'
+            }];
+            studentsData = this.loadStudentsData('search?_dc=' + Number(new Date()), {
+                asOf: this.getDefaultDateStr(),
+                count: 30,
+                countOnly: false,
+                entity: "Student",
+                fetchAll: true,
+                page: 1,
+                start: 0,
+                searchFields: ["Last_Name", "First_Name", "School", "Class", "Address_Text", "Address_Coord"],
+                returnFields: ["Last_Name", "First_Name", "School", "Class", "Address_Text", "Address_Coord"],
+                formFields: formFields,
+            }, school, className);
+
+            //studentsData.forEach(i => referencePoints.push(i[4].value));
+            studentsData.forEach(i => {
+                referencePoints.push(i.filter(item => {
+                    return item.field === "Address_Text"
+                })[0].value)
+            });
+
+            this.referencePoints = referencePoints;
+        }
+    },
+
+    loadStudentsData: function (endpoint, config, school, className) {
         var me = this,
-            hits = [];
+            hits = [],
+            result = [];
+
         Ext.Ajax.request({
             url: Unidata.Config.getMainUrl() + 'internal/search'/* + endpoint*/,
             async: false,
@@ -232,14 +261,25 @@ Ext.define('CUX.dashboard.RouteMapController', {
                 hits = JSON.parse(response.responseText).hits.map(x => {
                     return x.preview
                 });
+                hits.forEach(i => {
+                    if ((i.filter(item => {
+                            return item.field === 'School'
+                        })[0].value === school) &&
+                        (i.filter(item => {
+                            return item.field === 'Class'
+                        })[0].value === className)) {
+                        result.push(i)
+                    }
+                })
             }
         });
-        return hits;
+        return result;
     },
 
-    loadSchoolData: function (endpoint, config) {
+    loadSchoolData: function (endpoint, config, school) {
         var me = this,
-            hits = [];
+            hits = [],
+            result = [];
         Ext.Ajax.request({
             url: Unidata.Config.getMainUrl() + 'internal/search'/* + endpoint*/,
             async: false,
@@ -249,8 +289,15 @@ Ext.define('CUX.dashboard.RouteMapController', {
                 hits = JSON.parse(response.responseText).hits.map(x => {
                     return x.preview
                 });
+                hits.forEach(i => {
+                    if (i.filter(item => {
+                        return item.field === 'Name'
+                    })[0].value === school) {
+                        result.push(i)
+                    }
+                })
             }
         });
-        return hits;
+        return result;
     },
 });
