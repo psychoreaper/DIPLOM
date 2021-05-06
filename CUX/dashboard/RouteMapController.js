@@ -2,6 +2,10 @@ Ext.define('CUX.dashboard.RouteMapController', {
     extend: 'Ext.app.ViewController',
     alias: 'controller.routemap',
 
+    requires: [
+        "CUX.DataObtainer",
+    ],
+
     init: function () {
         this.callParent(arguments);
 
@@ -9,32 +13,71 @@ Ext.define('CUX.dashboard.RouteMapController', {
         this.loadClassesStore();
     },
 
-    getDefaultDateStr: function () {
-        var date = new Date();
-        return this.getDateStr(date) + "T00:00:00.000";
+    filterSchoolContent: function () {
+        var className = this.lookupReference('classes').getValue(),
+            store = this.getViewModel().getStore('classesStore');
+        if (!this.lookupReference('schools').getValue()) {
+            var school;
+            store.data.items.forEach(i => {
+                if (i.data.Name === className) school = i.data.School_Text
+            });
+            this.lookupReference('schools').setValue(school);
+        }
     },
 
-    getDateStr: function (date) {
-        let day = date.getDate();
-        let year = date.getFullYear();
-        let month = date.getMonth() + 1;
-        day = day < 10 ? "0" + day : day;
-        month = month < 10 ? "0" + month : month;
-        return year + '-' + month + '-' + day;
+    filterClassContent: function () {
+        var school = this.lookupReference('schools').getValue(),
+        store = this.getViewModel().getStore('classesStore');
+
+        if (school) store.filter('School_Text', school);
+        else store.clearFilter(true);
+        store.load();
+    },
+
+    onSchoolsExpand: function () {
+        var store = this.getViewModel().getStore('schoolsStore');
+        store.load();
     },
 
     onBuildButtonClick: function () {
-        // отрисовываем карту с маршрутом
-        //this.drawMap(this.runTSP(this.referencePoints));
         this.loadData();
         this.getYandexMatrix();
+    },
+
+    onBuildMatrixButtonClick: function () {
+        this.loadMatrixData();
+    },
+
+    loadData: function () {
+        var school = this.lookupReference('schools').getValue();
+        var className = this.lookupReference('classes').getValue();
+        if (school === null || className === null) {
+            Unidata.util.UserDialog.showWarning('Не указаны класс и/или школа');
+        } else {
+            this.referencePoints = CUX.DataObtainer.obtainAddresses(school, className);
+        }
+    },
+
+    loadMatrixData: function () {
+        var school = this.lookupReference('schools').getValue();
+        var className = this.lookupReference('classes').getValue();
+        if (school === null || className === null) {
+            Unidata.util.UserDialog.showWarning('Не указаны класс и/или школа');
+        } else {
+            this.referencePoints = CUX.DataObtainer.obtainAddresses(school, className);
+            this.drawMap(this.runTSP(this.referencePoints, CUX.DataObtainer.obtainMatrix(school, className)));
+            var res = '';
+            Ext.each(this.sortedPoints, function (i) {
+                res += '&#8226; ' + i + '<br>';
+            })
+            Ext.ComponentQuery.query('[itemId=routeText]')[0].getEl().setHtml(res);
+        }
     },
 
     getYandexMatrix: function () {
         var me = this,
             route = [],
-            n = me.referencePoints.length,
-            result = [];
+            n = me.referencePoints.length;
 
         for (let i = 0; i < n; i++) {
             for (let j = 0; j < n; j++) {
@@ -47,7 +90,7 @@ Ext.define('CUX.dashboard.RouteMapController', {
             me.drawMap(me.runTSP(me.referencePoints, me.parseMatrix(geoCodeValues)));
             var res = '';
             Ext.each(me.sortedPoints, function (i) {
-                res += '&#8227; ' + i + '<br>';
+                res += '&#8226; ' + i + '<br>';
             })
             Ext.ComponentQuery.query('[itemId=routeText]')[0].getEl().setHtml(res);
         });
@@ -169,7 +212,6 @@ Ext.define('CUX.dashboard.RouteMapController', {
         // то есть допустим bitmask = 00010, next = 2. тогда мы ставим единичку на 2 позицию
     },
 
-
     loadSchoolsStore: function () {
         var schools = this.getViewModel().getStore('schoolsStore');
         schools.load();
@@ -180,124 +222,4 @@ Ext.define('CUX.dashboard.RouteMapController', {
         classes.load();
     },
 
-    loadData: function () {
-        var school = this.lookupReference('schools').getValue();
-        var className = this.lookupReference('classes').getValue();
-        if (school === null || className === null) {
-            alert('Выберите школу и/или класс')
-        } else {
-            var referencePoints = [],
-                schoolData,
-                studentsData,
-                formFields = [];
-
-            formFields.push({
-                inverted: false,
-                name: "School",
-                searchType: "EXACT",
-                type: "String",
-                value: school
-            })
-
-            schoolData = this.loadSchoolData('search?_dc=' + Number(new Date()), {
-                "asOf": "2021-04-29T00:00:00.000",
-                "count": 30,
-                "countOnly": false,
-                "entity": "School",
-                "fetchAll": true,
-                "page": 1,
-                "start": 0,
-                "searchFields": ["Name"],
-                "returnFields": ["Name", "Address_Text", "Address_Coord", "$from", "$to"],
-                "formFields": formFields,
-            }, school);
-
-            referencePoints.push(schoolData[0].filter(item => {
-                return item.field === 'Address_Text'
-            })[0].value);
-
-            var formFields = [{
-                name: 'School',
-                type: 'String',
-                searchType: 'EXACT',
-                inverted: false,
-                value: 'Гимназия № 24 имени И.А. Крылова'
-            }];
-            studentsData = this.loadStudentsData('search?_dc=' + Number(new Date()), {
-                asOf: this.getDefaultDateStr(),
-                count: 30,
-                countOnly: false,
-                entity: "Student",
-                fetchAll: true,
-                page: 1,
-                start: 0,
-                searchFields: ["Last_Name", "First_Name", "School", "Class", "Address_Text", "Address_Coord"],
-                returnFields: ["Last_Name", "First_Name", "School", "Class", "Address_Text", "Address_Coord"],
-                formFields: formFields,
-            }, school, className);
-
-            //studentsData.forEach(i => referencePoints.push(i[4].value));
-            studentsData.forEach(i => {
-                referencePoints.push(i.filter(item => {
-                    return item.field === "Address_Text"
-                })[0].value)
-            });
-
-            this.referencePoints = referencePoints;
-        }
-    },
-
-    loadStudentsData: function (endpoint, config, school, className) {
-        var me = this,
-            hits = [],
-            result = [];
-
-        Ext.Ajax.request({
-            url: Unidata.Config.getMainUrl() + 'internal/search'/* + endpoint*/,
-            async: false,
-            method: 'POST',
-            jsonData: config,
-            success: function (response) {
-                hits = JSON.parse(response.responseText).hits.map(x => {
-                    return x.preview
-                });
-                hits.forEach(i => {
-                    if ((i.filter(item => {
-                            return item.field === 'School'
-                        })[0].value === school) &&
-                        (i.filter(item => {
-                            return item.field === 'Class'
-                        })[0].value === className)) {
-                        result.push(i)
-                    }
-                })
-            }
-        });
-        return result;
-    },
-
-    loadSchoolData: function (endpoint, config, school) {
-        var me = this,
-            hits = [],
-            result = [];
-        Ext.Ajax.request({
-            url: Unidata.Config.getMainUrl() + 'internal/search'/* + endpoint*/,
-            async: false,
-            method: 'POST',
-            jsonData: config,
-            success: function (response) {
-                hits = JSON.parse(response.responseText).hits.map(x => {
-                    return x.preview
-                });
-                hits.forEach(i => {
-                    if (i.filter(item => {
-                        return item.field === 'Name'
-                    })[0].value === school) {
-                        result.push(i)
-                    }
-                })
-            }
-        });
-        return result;
-    },
 });

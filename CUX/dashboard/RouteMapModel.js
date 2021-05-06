@@ -18,10 +18,6 @@ Ext.define('CUX.dashboard.RouteMapModel', {
             },
             fields: ["Name", "Address_Text", "Address_Coord"],
             storeId: 'schoolsStore',
-            // data: [
-            //     {Name: 'Гимназия 24', Address_Text: 'Средний проспект, 20', Address_Coord: '59.943884, 30.281955'},
-            //     {Name: 'Лицей 470', Address_Text: 'улица Бутлерова, 22А', Address_Coord: '60.003637, 30.397462'},
-            // ]
         },
         classesStore: {
             fields: ["Name", "School"],

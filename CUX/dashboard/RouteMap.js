@@ -36,6 +36,16 @@ Ext.define('CUX.dashboard.RouteMap', {
                     },
                 },
                 {
+                    xtype: 'button',
+                    reference: 'btnBuildMatrix',
+                    flex: 1,
+                    margin: '10 10 10 10',
+                    text: 'Построить из сохранённой матрицы',
+                    listeners: {
+                        click: 'onBuildMatrixButtonClick',
+                    },
+                },
+                {
                     xtype: 'combo',
                     emptyText: 'Школа',
                     fieldLabel: 'Школа',
@@ -51,6 +61,9 @@ Ext.define('CUX.dashboard.RouteMap', {
                     /*listeners: {
                         expand: 'loadSchoolsStore'
                     },*/
+                    listeners: {
+                        expand: 'onSchoolsExpand'
+                    },
                     displayField: 'Name',
                     valueField: 'Name',
                 },
@@ -70,6 +83,10 @@ Ext.define('CUX.dashboard.RouteMap', {
                     /*listeners: {
                         expand: 'loadClassesStore'
                     },*/
+                    listeners: {
+                        expand: 'filterClassContent',
+                        select: 'filterSchoolContent'
+                    },
                     displayField: 'Name',
                     valueField: 'Name',
                 },
