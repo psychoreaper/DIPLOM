@@ -116,102 +116,16 @@ Ext.define('CUX.dashboard.RouteMap', {
                             },
                         }, {
                             xtype: 'panel',
-                            title: 'Изменить список класса',
+                            title: 'Исключить адреса учеников из маршрута',
                             collapsible: true,
                             collapsed: true,
                             width: 1000,
                             margin: '10 10 10 10',
-                            items: [
-                                {
-                                    xtype: 'grid',
-                                    title: 'Список класса',
-                                    store: this.store,
-                                    columns: [
-                                        {
-                                            xtype: 'checkcolumn',
-                                            text: '???',
-                                            dataIndex: 'active',
-                                            width: 50,
-                                        }, {
-                                            text: 'Фамилия',
-                                            dataIndex: 'Last_Name',
-                                            flex: 1
-                                        }, {
-                                            text: 'Имя',
-                                            dataIndex: 'First_Name',
-                                            flex: 1
-                                        }, {
-                                            text: 'Школа',
-                                            dataIndex: 'School',
-                                            flex: 1
-                                        }, {
-                                            text: 'Класс',
-                                            dataIndex: 'Class',
-                                            width: 70,
-                                        }, {
-                                            text: 'Адрес',
-                                            dataIndex: 'Address_Text',
-                                            flex: 1
-                                        },
-                                    ],
-
-                                    //width: 780,
-                                }
-                            ]
-                        },]
+                            reference: 'classList',
+                        },
+                    ]
                 }
             ]
         },
-
-
     ],
-    store: null,
-
-    getStore: function () {
-        var school = 'Гимназия № 24 имени И.А. Крылова',
-            className = '3Б',
-            data = CUX.DataObtainer.loadStudentsData('search?_dc=' + Number(new Date()), {
-                asOf: CUX.DataObtainer.getDefaultDateStr(),
-                count: 30,
-                countOnly: false,
-                entity: "Student",
-                fetchAll: true,
-                page: 1,
-                start: 0,
-                searchFields: ["Last_Name", "First_Name", "School", "Class", "Address_Text", "Address_Coord"],
-                returnFields: ["Last_Name", "First_Name", "School", "Class", "Address_Text", "Address_Coord"],
-                //formFields: formFields,
-            }, school, className),
-            array = [],
-            store;
-
-        Ext.each(data, function (i) {
-            array.push({
-                Last_Name: i.filter(item => {
-                    return item.field === 'Last_Name'
-                })[0].value,
-                First_Name: i.filter(item => {
-                    return item.field === 'First_Name'
-                })[0].value,
-                School: i.filter(item => {
-                    return item.field === 'School'
-                })[0].value,
-                Class: i.filter(item => {
-                    return item.field === 'Class'
-                })[0].value,
-                Address_Text: i.filter(item => {
-                    return item.field === 'Address_Text'
-                })[0].value,
-                active: true
-            })
-        });
-
-        store = Ext.create('Ext.data.Store', {
-            fields: ["Last_Name", "First_Name", "School", "Class", "Address_Text", 'active'],
-            data: array,
-        });
-
-        return store;
-    },
-
 });

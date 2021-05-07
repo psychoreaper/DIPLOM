@@ -7,16 +7,9 @@ Ext.define('CUX.dashboard.RouteMapController', {
     ],
 
     initComponent: function () {
-        //this.store = this.getStore();
-
         this.callParent(arguments);
         this.loadSchoolsStore();
         this.loadClassesStore();
-    },
-
-    initItems: function () {
-        this.callParent(arguments);
-        this.store = this.getStore();
     },
 
     filterSchoolContent: function () {
@@ -45,41 +38,107 @@ Ext.define('CUX.dashboard.RouteMapController', {
         store.load();
     },
 
+    onListButtonClick: function () {
+        var school = this.lookupReference('schools').getValue();
+        var className = this.lookupReference('classes').getValue();
+        if (school === null || className === null) {
+            Unidata.util.UserDialog.showWarning('Не указаны класс и/или школа');
+        } else {
+            var data = CUX.DataObtainer.loadStudentsData('search?_dc=' + Number(new Date()), {
+                    asOf: CUX.DataObtainer.getDefaultDateStr(),
+                    count: 30,
+                    countOnly: false,
+                    entity: "Student",
+                    fetchAll: true,
+                    page: 1,
+                    start: 0,
+                    searchFields: ["Last_Name", "First_Name", "School", "Class", "Address_Text", "Address_Coord"],
+                    returnFields: ["Last_Name", "First_Name", "School", "Class", "Address_Text", "Address_Coord"],
+                    //formFields: formFields,
+                }, school, className),
+                array = [],
+                store;
+
+            Ext.each(data, function (i) {
+                array.push({
+                    Last_Name: i.filter(item => {
+                        return item.field === 'Last_Name'
+                    })[0].value,
+                    First_Name: i.filter(item => {
+                        return item.field === 'First_Name'
+                    })[0].value,
+                    School: i.filter(item => {
+                        return item.field === 'School'
+                    })[0].value,
+                    Class: i.filter(item => {
+                        return item.field === 'Class'
+                    })[0].value,
+                    Address_Text: i.filter(item => {
+                        return item.field === 'Address_Text'
+                    })[0].value,
+                    active: true
+                })
+            });
+
+            store = Ext.create('Ext.data.Store', {
+                fields: ["Last_Name", "First_Name", "School", "Class", "Address_Text", 'active'],
+                data: array,
+                reference: 'studentsStore',
+            });
+            this.studentsStore = store;
+
+            while (this.lookupReference('classList').items.items[0]) {
+                this.lookupReference('classList').remove(this.lookupReference('classList').items.items[0]);
+            }
+
+            this.lookupReference('classList').add(
+                {
+                    xtype: 'grid',
+                    title: 'Список класса',
+                    store: store,
+                    columns: [
+                        {
+                            xtype: 'checkcolumn',
+                            text: 'Включить',
+                            dataIndex: 'active',
+                            width: 50,
+                        }, {
+                            text: 'Фамилия',
+                            dataIndex: 'Last_Name',
+                            flex: 1
+                        }, {
+                            text: 'Имя',
+                            dataIndex: 'First_Name',
+                            flex: 1
+                        }, {
+                            text: 'Школа',
+                            dataIndex: 'School',
+                            flex: 1
+                        }, {
+                            text: 'Класс',
+                            dataIndex: 'Class',
+                            width: 70,
+                        }, {
+                            text: 'Адрес',
+                            dataIndex: 'Address_Text',
+                            flex: 1
+                        },
+                    ],
+                }
+            )
+        }
+    },
+
+    studentsStore: null,
+    blacklist: [],
+
     onBuildButtonClick: function () {
         var school = this.lookupReference('schools').getValue();
         var className = this.lookupReference('classes').getValue();
         if (school === null || className === null) {
             Unidata.util.UserDialog.showWarning('Не указаны класс и/или школа');
         } else {
-            this.lookupReference('mainContainer').add(
-                {
-                    xtype: 'panel',
-                    title: 'Маршрут',
-                    width: 1176,
-                    layout: {
-                        type: 'hbox',
-                        align: 'stretch',
-                    },
-                    margin: '10 10 10 10',
-                    items: [
-                        {
-                            xtype: 'panel',
-                            html: '<div id="yandex-map" style="height:400px;/*width:800px;*/"></div>\n',
-                            title: 'Карта',
-                            margin: '10 10 10 10',
-                            itemId: 'yandexMap',
-                            flex: 1,
-                        },
-                        /*{
-                            xtype: 'panel',
-                            html: '',
-                            margin: '10 10 10 10',
-                            itemId: 'routeText',
-                            flex: 1,
-                        },*/
-                    ]
-                },
-            );
+            this.addMapWidget();
             this.loadData(school, className);
             this.getYandexMatrix();
         }
@@ -91,37 +150,41 @@ Ext.define('CUX.dashboard.RouteMapController', {
         if (school === null || className === null) {
             Unidata.util.UserDialog.showWarning('Не указаны класс и/или школа');
         } else {
-            this.lookupReference('mainContainer').add(
-                {
-                    xtype: 'panel',
-                    title: 'Маршрут',
-                    width: 1176,
-                    layout: {
-                        type: 'hbox',
-                        align: 'stretch',
-                    },
-                    margin: '10 10 10 10',
-                    items: [
-                        {
-                            xtype: 'panel',
-                            html: '<div id="yandex-map" style="height:400px;/*width:800px;*/"></div>\n',
-                            title: 'Карта',
-                            margin: '10 10 10 10',
-                            itemId: 'yandexMap',
-                            flex: 1,
-                        },
-                        /*{
-                            xtype: 'panel',
-                            html: '',
-                            margin: '10 10 10 10',
-                            itemId: 'routeText',
-                            flex: 1,
-                        },*/
-                    ]
-                },
-            );
+            this.addMapWidget();
             this.loadMatrixData(school, className);
         }
+    },
+
+    addMapWidget: function () {
+        if (this.lookupReference('mapPanel')) {
+            while (this.lookupReference('mapPanel').items.items[0]) {
+                this.lookupReference('mapPanel').remove(this.lookupReference('mapPanel').items.items[0]);
+            }
+        }
+
+        this.lookupReference('mainContainer').add(
+            {
+                xtype: 'panel',
+                reference: 'mapPanel',
+                title: 'Маршрут',
+                width: 1176,
+                layout: {
+                    type: 'hbox',
+                    align: 'stretch',
+                },
+                margin: '10 10 10 10',
+                items: [
+                    {
+                        xtype: 'panel',
+                        html: '<div id="yandex-map" style="height:400px;/*width:800px;*/"></div>\n',
+                        title: 'Карта',
+                        margin: '10 10 10 10',
+                        itemId: 'yandexMap',
+                        flex: 1,
+                    },
+                ]
+            },
+        );
     },
 
     loadData: function (school, className) {
@@ -130,12 +193,16 @@ Ext.define('CUX.dashboard.RouteMapController', {
 
     loadMatrixData: function (school, className) {
         this.referencePoints = CUX.DataObtainer.obtainAddresses(school, className);
-        this.drawMap(this.runTSP(this.referencePoints, CUX.DataObtainer.obtainMatrix(school, className)));
-        var res = '';
-        Ext.each(this.sortedPoints, function (i) {
-            res += '&#8226; ' + i + '<br>';
-        })
-        Ext.ComponentQuery.query('[itemId=routeText]')[0].getEl().setHtml(res);
+
+        var points = this.referencePoints,
+            matrix = CUX.DataObtainer.obtainMatrix(school, className);
+
+        this.fillBlacklist();
+
+        points = this.excludePoints(points);
+        matrix = this.excludeMatrix(matrix);
+
+        this.drawMap(this.runTSP(points, matrix));
     },
 
     getYandexMatrix: function () {
@@ -151,12 +218,15 @@ Ext.define('CUX.dashboard.RouteMapController', {
         }
 
         Promise.all(route).then(function (geoCodeValues) {
-            me.drawMap(me.runTSP(me.referencePoints, me.parseMatrix(geoCodeValues)));
-            var res = '';
-            Ext.each(me.sortedPoints, function (i) {
-                res += '&#8226; ' + i + '<br>';
-            })
-            Ext.ComponentQuery.query('[itemId=routeText]')[0].getEl().setHtml(res);
+            var points = me.referencePoints,
+                matrix = me.parseMatrix(geoCodeValues);
+
+            me.fillBlacklist();
+
+            points = me.excludePoints(points);
+            matrix = me.excludeMatrix(matrix);
+
+            me.drawMap(me.runTSP(points, matrix));
         });
     },
 
@@ -220,7 +290,6 @@ Ext.define('CUX.dashboard.RouteMapController', {
     // поиск решения
     solveTSP: function (coordPoints, matrix) {
         var me = this,
-            //dist = me.getMatrix(coordPoints),
             dist = matrix,
             points = [],
             n = coordPoints.length,
@@ -284,6 +353,32 @@ Ext.define('CUX.dashboard.RouteMapController', {
     loadClassesStore: function () {
         var classes = this.getViewModel().getStore('classesStore');
         classes.load();
+    },
+
+    fillBlacklist: function () {
+        if (this.studentsStore) {
+            var items = this.studentsStore.data.items;
+            for (var i = 0; i < items.length; i++) {
+                if (!items[i].data.active) this.blacklist.push(i);
+            }
+        }
+    },
+
+    excludePoints: function (points) {
+        Ext.each(this.blacklist, function (i) {
+            points.splice(i+1, 1);
+        })
+        return points;
+    },
+
+    excludeMatrix: function (matrix) {
+        Ext.each(this.blacklist, function (i) {
+            matrix.splice(i+1, 1);
+            Ext.each(matrix, function (row) {
+                row.splice(i+1, 1);
+            })
+        })
+        return matrix;
     },
 
 });
