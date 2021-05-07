@@ -21,106 +21,197 @@ Ext.define('CUX.dashboard.RouteMap', {
             xtype: 'container',
             width: 1200,
             layout: {
-                type: 'hbox',
-                align: 'stretch',
+                type: 'vbox',
             },
+            reference: 'mainContainer',
             items: [
                 {
-                    xtype: 'button',
-                    reference: 'btnBuild',
-                    flex: 1,
-                    margin: '10 10 10 10',
-                    text: 'Построить',
-                    listeners: {
-                        click: 'onBuildButtonClick',
+                    xtype: 'container',
+                    reference: 'paramsContainer',
+                    layout: {
+                        type: 'hbox',
+                        align: 'stretch',
                     },
+                    width: 1176,
+                    margin: '0 10 0 10',
+                    items: [
+                        {
+                            xtype: 'combo',
+                            emptyText: 'Школа',
+                            fieldLabel: 'Школа',
+                            labelAlign: 'top',
+                            labelSeparator: '',
+                            reference: 'schools',
+                            queryMode: 'local',
+                            flex: 1,
+                            margin: '0 10 10 10',
+                            bind: {
+                                store: '{schoolsStore}'
+                            },
+                            listeners: {
+                                expand: 'onSchoolsExpand'
+                            },
+                            displayField: 'Name',
+                            valueField: 'Name',
+                        },
+                        {
+                            xtype: 'combo',
+                            emptyText: 'Класс',
+                            fieldLabel: 'Класс',
+                            labelAlign: 'top',
+                            labelSeparator: '',
+                            reference: 'classes',
+                            queryMode: 'local',
+                            flex: 1,
+                            margin: '0 10 10 10',
+                            bind: {
+                                store: '{classesStore}'
+                            },
+                            listeners: {
+                                expand: 'filterClassContent',
+                                select: 'filterSchoolContent'
+                            },
+                            displayField: 'Name',
+                            valueField: 'Name',
+                        },
+                        {
+                            xtype: 'button',
+                            reference: 'btnBuild',
+                            flex: 1,
+                            margin: '10 10 10 10',
+                            text: 'Построить',
+                            listeners: {
+                                click: 'onBuildButtonClick',
+                            },
+                        },
+                        {
+                            xtype: 'button',
+                            reference: 'btnBuildMatrix',
+                            flex: 1,
+                            margin: '10 10 10 10',
+                            text: 'Построить из матрицы',
+                            listeners: {
+                                click: 'onBuildMatrixButtonClick',
+                            },
+                        },
+                    ]
                 },
                 {
-                    xtype: 'button',
-                    reference: 'btnBuildMatrix',
-                    flex: 1,
-                    margin: '10 10 10 10',
-                    text: 'Построить из сохранённой матрицы',
-                    listeners: {
-                        click: 'onBuildMatrixButtonClick',
+                    xtype: 'container',
+                    reference: 'listContainer',
+                    layout: {
+                        type: 'hbox'
                     },
-                },
-                {
-                    xtype: 'combo',
-                    emptyText: 'Школа',
-                    fieldLabel: 'Школа',
-                    labelAlign: 'top',
-                    labelSeparator: '',
-                    reference: 'schools',
-                    queryMode: 'local',
-                    flex: 1,
-                    margin: '0 10 10 10',
-                    bind: {
-                        store: '{schoolsStore}'
-                    },
-                    /*listeners: {
-                        expand: 'loadSchoolsStore'
-                    },*/
-                    listeners: {
-                        expand: 'onSchoolsExpand'
-                    },
-                    displayField: 'Name',
-                    valueField: 'Name',
-                },
-                {
-                    xtype: 'combo',
-                    emptyText: 'Класс',
-                    fieldLabel: 'Класс',
-                    labelAlign: 'top',
-                    labelSeparator: '',
-                    reference: 'classes',
-                    queryMode: 'local',
-                    flex: 1,
-                    margin: '0 10 10 10',
-                    bind: {
-                        store: '{classesStore}'
-                    },
-                    /*listeners: {
-                        expand: 'loadClassesStore'
-                    },*/
-                    listeners: {
-                        expand: 'filterClassContent',
-                        select: 'filterSchoolContent'
-                    },
-                    displayField: 'Name',
-                    valueField: 'Name',
-                },
+                    width: 1176,
+                    items: [
+                        {
+                            xtype: 'button',
+                            reference: 'btnList',
+                            margin: '10 10 10 10',
+                            text: 'Загрузить список',
+                            flex: 1,
+                            height: 36,
+                            listeners: {
+                                click: 'onListButtonClick',
+                            },
+                        }, {
+                            xtype: 'panel',
+                            title: 'Изменить список класса',
+                            collapsible: true,
+                            collapsed: true,
+                            width: 1000,
+                            margin: '10 10 10 10',
+                            items: [
+                                {
+                                    xtype: 'grid',
+                                    title: 'Список класса',
+                                    store: this.store,
+                                    columns: [
+                                        {
+                                            xtype: 'checkcolumn',
+                                            text: '???',
+                                            dataIndex: 'active',
+                                            width: 50,
+                                        }, {
+                                            text: 'Фамилия',
+                                            dataIndex: 'Last_Name',
+                                            flex: 1
+                                        }, {
+                                            text: 'Имя',
+                                            dataIndex: 'First_Name',
+                                            flex: 1
+                                        }, {
+                                            text: 'Школа',
+                                            dataIndex: 'School',
+                                            flex: 1
+                                        }, {
+                                            text: 'Класс',
+                                            dataIndex: 'Class',
+                                            width: 70,
+                                        }, {
+                                            text: 'Адрес',
+                                            dataIndex: 'Address_Text',
+                                            flex: 1
+                                        },
+                                    ],
+
+                                    //width: 780,
+                                }
+                            ]
+                        },]
+                }
             ]
         },
 
 
-        {
-            xtype: 'panel',
-            title: 'Маршрут',
-            width: 1176,
-            layout: {
-                type: 'hbox',
-                align: 'stretch',
-            },
-            margin: '10 10 10 10',
-            items: [
-                {
-                    xtype: 'panel',
-                    html: '<div id="yandex-map" style="height:400px;/*width:800px;*/"></div>\n',
-                    title: 'Карта',
-                    margin: '10 10 10 10',
-                    itemId: 'yandexMap',
-                    flex: 3,
-                },
-                {
-                    xtype: 'panel',
-                    html: '',
-                    //title: 'Маршрут в текстовом виде',
-                    margin: '10 10 10 10',
-                    itemId: 'routeText',
-                    flex: 1,
-                },
-            ]
-        },
-    ]
+    ],
+    store: null,
+
+    getStore: function () {
+        var school = 'Гимназия № 24 имени И.А. Крылова',
+            className = '3Б',
+            data = CUX.DataObtainer.loadStudentsData('search?_dc=' + Number(new Date()), {
+                asOf: CUX.DataObtainer.getDefaultDateStr(),
+                count: 30,
+                countOnly: false,
+                entity: "Student",
+                fetchAll: true,
+                page: 1,
+                start: 0,
+                searchFields: ["Last_Name", "First_Name", "School", "Class", "Address_Text", "Address_Coord"],
+                returnFields: ["Last_Name", "First_Name", "School", "Class", "Address_Text", "Address_Coord"],
+                //formFields: formFields,
+            }, school, className),
+            array = [],
+            store;
+
+        Ext.each(data, function (i) {
+            array.push({
+                Last_Name: i.filter(item => {
+                    return item.field === 'Last_Name'
+                })[0].value,
+                First_Name: i.filter(item => {
+                    return item.field === 'First_Name'
+                })[0].value,
+                School: i.filter(item => {
+                    return item.field === 'School'
+                })[0].value,
+                Class: i.filter(item => {
+                    return item.field === 'Class'
+                })[0].value,
+                Address_Text: i.filter(item => {
+                    return item.field === 'Address_Text'
+                })[0].value,
+                active: true
+            })
+        });
+
+        store = Ext.create('Ext.data.Store', {
+            fields: ["Last_Name", "First_Name", "School", "Class", "Address_Text", 'active'],
+            data: array,
+        });
+
+        return store;
+    },
+
 });

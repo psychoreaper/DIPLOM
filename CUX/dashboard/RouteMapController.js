@@ -6,11 +6,17 @@ Ext.define('CUX.dashboard.RouteMapController', {
         "CUX.DataObtainer",
     ],
 
-    init: function () {
-        this.callParent(arguments);
+    initComponent: function () {
+        //this.store = this.getStore();
 
+        this.callParent(arguments);
         this.loadSchoolsStore();
         this.loadClassesStore();
+    },
+
+    initItems: function () {
+        this.callParent(arguments);
+        this.store = this.getStore();
     },
 
     filterSchoolContent: function () {
@@ -27,7 +33,7 @@ Ext.define('CUX.dashboard.RouteMapController', {
 
     filterClassContent: function () {
         var school = this.lookupReference('schools').getValue(),
-        store = this.getViewModel().getStore('classesStore');
+            store = this.getViewModel().getStore('classesStore');
 
         if (school) store.filter('School_Text', school);
         else store.clearFilter(true);
@@ -40,38 +46,96 @@ Ext.define('CUX.dashboard.RouteMapController', {
     },
 
     onBuildButtonClick: function () {
-        this.loadData();
-        this.getYandexMatrix();
+        var school = this.lookupReference('schools').getValue();
+        var className = this.lookupReference('classes').getValue();
+        if (school === null || className === null) {
+            Unidata.util.UserDialog.showWarning('Не указаны класс и/или школа');
+        } else {
+            this.lookupReference('mainContainer').add(
+                {
+                    xtype: 'panel',
+                    title: 'Маршрут',
+                    width: 1176,
+                    layout: {
+                        type: 'hbox',
+                        align: 'stretch',
+                    },
+                    margin: '10 10 10 10',
+                    items: [
+                        {
+                            xtype: 'panel',
+                            html: '<div id="yandex-map" style="height:400px;/*width:800px;*/"></div>\n',
+                            title: 'Карта',
+                            margin: '10 10 10 10',
+                            itemId: 'yandexMap',
+                            flex: 1,
+                        },
+                        /*{
+                            xtype: 'panel',
+                            html: '',
+                            margin: '10 10 10 10',
+                            itemId: 'routeText',
+                            flex: 1,
+                        },*/
+                    ]
+                },
+            );
+            this.loadData(school, className);
+            this.getYandexMatrix();
+        }
     },
 
     onBuildMatrixButtonClick: function () {
-        this.loadMatrixData();
-    },
-
-    loadData: function () {
         var school = this.lookupReference('schools').getValue();
         var className = this.lookupReference('classes').getValue();
         if (school === null || className === null) {
             Unidata.util.UserDialog.showWarning('Не указаны класс и/или школа');
         } else {
-            this.referencePoints = CUX.DataObtainer.obtainAddresses(school, className);
+            this.lookupReference('mainContainer').add(
+                {
+                    xtype: 'panel',
+                    title: 'Маршрут',
+                    width: 1176,
+                    layout: {
+                        type: 'hbox',
+                        align: 'stretch',
+                    },
+                    margin: '10 10 10 10',
+                    items: [
+                        {
+                            xtype: 'panel',
+                            html: '<div id="yandex-map" style="height:400px;/*width:800px;*/"></div>\n',
+                            title: 'Карта',
+                            margin: '10 10 10 10',
+                            itemId: 'yandexMap',
+                            flex: 1,
+                        },
+                        /*{
+                            xtype: 'panel',
+                            html: '',
+                            margin: '10 10 10 10',
+                            itemId: 'routeText',
+                            flex: 1,
+                        },*/
+                    ]
+                },
+            );
+            this.loadMatrixData(school, className);
         }
     },
 
-    loadMatrixData: function () {
-        var school = this.lookupReference('schools').getValue();
-        var className = this.lookupReference('classes').getValue();
-        if (school === null || className === null) {
-            Unidata.util.UserDialog.showWarning('Не указаны класс и/или школа');
-        } else {
-            this.referencePoints = CUX.DataObtainer.obtainAddresses(school, className);
-            this.drawMap(this.runTSP(this.referencePoints, CUX.DataObtainer.obtainMatrix(school, className)));
-            var res = '';
-            Ext.each(this.sortedPoints, function (i) {
-                res += '&#8226; ' + i + '<br>';
-            })
-            Ext.ComponentQuery.query('[itemId=routeText]')[0].getEl().setHtml(res);
-        }
+    loadData: function (school, className) {
+        this.referencePoints = CUX.DataObtainer.obtainAddresses(school, className);
+    },
+
+    loadMatrixData: function (school, className) {
+        this.referencePoints = CUX.DataObtainer.obtainAddresses(school, className);
+        this.drawMap(this.runTSP(this.referencePoints, CUX.DataObtainer.obtainMatrix(school, className)));
+        var res = '';
+        Ext.each(this.sortedPoints, function (i) {
+            res += '&#8226; ' + i + '<br>';
+        })
+        Ext.ComponentQuery.query('[itemId=routeText]')[0].getEl().setHtml(res);
     },
 
     getYandexMatrix: function () {
