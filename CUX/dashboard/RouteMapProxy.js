@@ -5,56 +5,82 @@ Ext.define('CUX.dashboard.RouteMapProxy', {
 
     paramsAsJson: true,
 
-    actionMethods : {
+    actionMethods: {
         create: 'POST',
         read: 'POST',
         update: 'POST',
         destroy: 'POST'
     },
 
-    extraParams : {
-    },
+    extraParams: {},
 
     reader: {
         type: 'json',
         transform: {
             fn: function (data) {
                 var result = [];
-                var activeHits = data.hits.filter(function (item) {return item.status === 'ACTIVE'});
+                var activeHits = data.hits.filter(function (item) {
+                    return item.status === 'ACTIVE'
+                });
                 if (activeHits && activeHits.length > 0) {
                     Ext.each(activeHits, function (hit) {
                         if (hit.preview) {
-                            // TODO: добавить здесь проверку на то, откуда прилетело
-                            if (hit.preview.filter(function (item) {return item.field==='Address_Text';}).length !== 0) {
-                                var nameField = hit.preview.filter(function (item) {
-                                    return item.field === 'Name';
+                            // если у нас есть адрес и просто имя - это школа
+                            if ((hit.preview.filter(function (item) {
+                                return item.field === 'Address_Text';
+                            }).length !== 0) && (hit.preview.filter(function (item) {
+                                return item.field === 'Name';
+                            }).length !== 0)
+                            ) {
+
+                                result.push({
+                                    Name: hit.preview.filter(item => {
+                                        return item.field === 'Name'
+                                    })[0].value,
+                                    Address_Text: hit.preview.filter(item => {
+                                        return item.field === 'Address_Text'
+                                    })[0].value,
+                                    Address_Coord: hit.preview.filter(item => {
+                                        return item.field === 'Address_Coord'
+                                    })[0].value
                                 });
-                                var textField = hit.preview.filter(function (item) {
-                                    return item.field === 'Address_Text';
+
+                            }
+                            // если у нас есть просто имя и школа - это класс
+                            else if ((hit.preview.filter(function (item) {
+                                return item.field === 'School';
+                            }).length !== 0) && (hit.preview.filter(function (item) {
+                                return item.field === 'Name';
+                            }).length !== 0)
+                            ) {
+                                result.push({
+                                    Name: hit.preview.filter(item => {
+                                        return item.field === 'Name'
+                                    })[0].value,
+                                    School_Text: hit.preview.filter(item => {
+                                        return item.field === 'School'
+                                    })[0].value,
                                 });
-                                var coordField = hit.preview.filter(function (item) {
-                                    return item.field === 'Address_Coord';
-                                });
-                                if (nameField && nameField[0] && textField && textField[0] && coordField && coordField[0]) {
-                                    result.push({
-                                        Name: nameField[0].value,
-                                        Address_Text: textField[0].value,
-                                        Address_Coord: coordField[0].value
-                                    });
-                                }
+
                             } else {
-                                var nameField = hit.preview.filter(function (item) {
-                                    return item.field === 'Name';
-                                });
-                                var schoolField = hit.preview.filter(function (item) {
-                                    return item.field === 'School';
-                                });
-                                if (nameField && nameField[0] && schoolField && schoolField[0]) {
-                                    result.push({
-                                        Name: nameField[0].value,
-                                        School_Text: schoolField[0].value,
-                                    });
-                                }
+                                result.push({
+                                    Last_Name: hit.preview.filter(item => {
+                                        return item.field === 'Last_Name'
+                                    })[0].value,
+                                    First_Name: hit.preview.filter(item => {
+                                        return item.field === 'First_Name'
+                                    })[0].value,
+                                    School: hit.preview.filter(item => {
+                                        return item.field === 'School'
+                                    })[0].value,
+                                    Class: hit.preview.filter(item => {
+                                        return item.field === 'Class'
+                                    })[0].value,
+                                    Address_Text: hit.preview.filter(item => {
+                                        return item.field === 'Address_Text'
+                                    })[0].value,
+                                    active: true
+                                })
                             }
                         }
                     });

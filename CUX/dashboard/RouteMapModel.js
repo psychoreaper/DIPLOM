@@ -4,6 +4,8 @@ Ext.define('CUX.dashboard.RouteMapModel', {
 
     stores: {
         schoolsStore: {
+            fields: ["Name", "Address_Text", "Address_Coord"],
+            storeId: 'schoolsStore',
             proxy: {
                 type: 'routemap',
                 extraParams: {
@@ -16,8 +18,6 @@ Ext.define('CUX.dashboard.RouteMapModel', {
                     returnFields: ['Name', 'Address_Text', 'Address_Coord'],
                 },
             },
-            fields: ["Name", "Address_Text", "Address_Coord"],
-            storeId: 'schoolsStore',
         },
         classesStore: {
             fields: ["Name", "School"],
@@ -35,19 +35,21 @@ Ext.define('CUX.dashboard.RouteMapModel', {
                 },
             },
         },
-        /*studentsStore: {
+        studentsStore: {
+            fields: ["Last_Name", "First_Name", "School", "Class", "Address_Text", 'active'],
+            storeId: 'studentsStore',
             proxy: {
+                type: 'routemap',
                 extraParams: {
                     countOnly: false,
                     entity: "Student",
                     fetchAll: true,
                     page: 1,
                     start: 0,
+                    searchFields: ["Last_Name", "First_Name", "School", "Class", "Address_Text", "Address_Coord"],
                     returnFields: ["Last_Name", "First_Name", "School", "Class", "Address_Text", "Address_Coord"],
-                },
+                }
             },
-            fields: ["Last_Name", "First_Name", "Address_Text", "Address_Coord"],
-            storeId: 'studentsStore',
-        }*/
+        }
     }
 })

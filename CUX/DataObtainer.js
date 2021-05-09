@@ -5,15 +5,6 @@ Ext.define('CUX.DataObtainer', {
         var referencePoints = [],
             schoolData,
             studentsData;
-        //formFields = [];
-
-        // formFields.push({
-        //     inverted: false,
-        //     name: "School",
-        //     searchType: "EXACT",
-        //     type: "String",
-        //     value: school
-        // })
 
         schoolData = this.loadSchoolData('search?_dc=' + Number(new Date()), {
             "asOf": "2021-04-29T00:00:00.000",
@@ -25,7 +16,6 @@ Ext.define('CUX.DataObtainer', {
             "start": 0,
             "searchFields": ["Name"],
             "returnFields": ["Name", "Address_Text", "Address_Coord"],
-            //"formFields": formFields,
         }, school);
 
         referencePoints.push(schoolData[0].filter(item => {
@@ -42,7 +32,6 @@ Ext.define('CUX.DataObtainer', {
             start: 0,
             searchFields: ["Last_Name", "First_Name", "School", "Class", "Address_Text", "Address_Coord"],
             returnFields: ["Last_Name", "First_Name", "School", "Class", "Address_Text", "Address_Coord"],
-            //formFields: formFields,
         }, school, className);
 
         studentsData.forEach(i => {
@@ -68,7 +57,6 @@ Ext.define('CUX.DataObtainer', {
             start: 0,
             searchFields: ["Name", "School"],
             returnFields: ["Name", "School", "Matrix"],
-            //formFields: formFields,
         }, school, className);
 
         Ext.each(classData, function (i) {
@@ -176,7 +164,9 @@ Ext.define('CUX.DataObtainer', {
     },
 
     makeMatrix: function (string) {
-        var initial = string.split(",").map(x => {return parseFloat(x)}),
+        var initial = string.split(",").map(x => {
+                return parseFloat(x)
+            }),
             n = initial[0],
             result = [];
 
